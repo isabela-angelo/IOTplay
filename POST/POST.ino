@@ -14,25 +14,20 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
-//const char* ssid = "Link_One_3DC6F8";
-//const char* password = "LePapitoDonaEli2014";
-const char* ssid = "Loading...";
-const char* password = "eutinhaumagalinhaquesechamavamariloo2016";
+const char* ssid = "CITI-Terreo"; // nome da rede
+const char* password = "1cbe991a14"; // senha
 
+// servidor para envio
 const char* host = "api.thingspeak.com";
 const int httpsPort = 443;
+String url;
 
 WiFiClientSecure client;
 
-String url = "/channels/219279/feeds.json";
-String line;
-int pos;
-int ledPin = D0;
+int sensorValue;
+
 
 void setup() {
-
-  pinMode(ledPin, OUTPUT);
-  //pinMode(BUILTIN_LED, OUTPUT);
   
   Serial.begin(115200);
   Serial.println();
@@ -47,57 +42,33 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-
   
-}
-
+  
+} 
+    
+  
 void loop() {
-  // Use WiFiClientSecure class to create TLS connection
-  
+  // Use WiFiClientSecure class to create TLS connection  
   Serial.print("connecting to ");
   Serial.println(host);
   if (!client.connect(host, httpsPort)) {
     Serial.println("connection failed");
     return;
-  }  
+  } 
   
+  sensorValue = analogRead(A0); //pino analógico ligado ao sensor
+  Serial.println(sensorValue);
+  url = "/update.json?api_key=4QS8PYAXTT6TXQDC&field1="+String(sensorValue);
   Serial.print("requesting URL: ");
   Serial.println(url);
 
-  client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+  client.print(String("POST ") + url + " HTTP/1.1\r\n" +
                "Host: " + host + "\r\n" +
                "User-Agent: BuildFailureDetectorESP8266\r\n" +
                "Connection: close\r\n\r\n");
 
   Serial.println("request sent");
-  while (client.connected()) {
-    line = client.readStringUntil('\n');
-    if (line == "\r") {
-      Serial.println("headers received");
-      break;
-    }
-  }
   
-  Serial.println("==========");
-  line = client.readStringUntil('\r');  
-  line = client.readStringUntil('\r');
-  Serial.println("closing connection");
-  
-  while (line.indexOf("field1") != -1) {
-    pos = line.indexOf("field1");
-    line = line.substring(pos+1, line.length());
-  }
-  if (line.indexOf("ON") != -1) {
-      digitalWrite(ledPin, HIGH);
-      //digitalWrite(BUILTIN_LED, HIGH);
-      Serial.println("ON!");
-  }
-  else {
-      digitalWrite(ledPin, LOW);
-      //digitalWrite(BUILTIN_LED, LOW);
-      Serial.println("OFF!");
-  }
+  delay(16000); //delay de envio (mínimo 15s)
 
-  delay(20000);
-  
 }

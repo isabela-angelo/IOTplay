@@ -14,21 +14,24 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClientSecure.h>
 
-//const char* ssid = "Link_One_3DC6F8";
-//const char* password = "LePapitoDonaEli2014";
-const char* ssid = "Loading...";
-const char* password = "eutinhaumagalinhaquesechamavamariloo2016";
+const char* ssid = "CITI-Terreo"; // nome da rede
+const char* password = "1cbe991a14"; // senha
 
+// servidor para receber dados
 const char* host = "api.thingspeak.com";
 const int httpsPort = 443;
-String url;
 
 WiFiClientSecure client;
 
-int sensorValue;
-
+String url = "/channels/219279/feeds/last.txt"; 
+String line;
+int pos;
+int ledPin = D0; //pino digital ligado ao LED
 
 void setup() {
+
+  pinMode(ledPin, OUTPUT);
+  //pinMode(BUILTIN_LED, OUTPUT);
   
   Serial.begin(115200);
   Serial.println();
@@ -43,23 +46,20 @@ void setup() {
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+
   
-  
-} 
-    
-  
+}
+
 void loop() {
-  // Use WiFiClientSecure class to create TLS connection  
+  // Use WiFiClientSecure class to create TLS connection
+  
   Serial.print("connecting to ");
   Serial.println(host);
   if (!client.connect(host, httpsPort)) {
     Serial.println("connection failed");
     return;
-  } 
+  }  
   
-  sensorValue = analogRead(A0);
-  Serial.println(sensorValue);
-  url = "/update.json?api_key=4QS8PYAXTT6TXQDC&field1="+String(sensorValue);
   Serial.print("requesting URL: ");
   Serial.println(url);
 
@@ -69,7 +69,34 @@ void loop() {
                "Connection: close\r\n\r\n");
 
   Serial.println("request sent");
+  while (client.connected()) {
+    line = client.readStringUntil('\n');
+    if (line == "\r") {
+      Serial.println("headers received");
+      break;
+    }
+  }
   
-  delay(20000);
+  Serial.println("==========");
+  line = client.readStringUntil('\r');  
+  line = client.readStringUntil('\r');
+  Serial.println("closing connection");  
+  
+  pos = line.indexOf("field1"); // pegar field1
+  line = line.substring(pos, line.length());
+  Serial.println(line);
 
+  if (line.indexOf("ON") != -1) {
+      digitalWrite(ledPin, HIGH);
+      //digitalWrite(BUILTIN_LED, HIGH);
+      Serial.println("ON!");
+  }
+  else {
+      digitalWrite(ledPin, LOW);
+      //digitalWrite(BUILTIN_LED, LOW);
+      Serial.println("OFF!");
+  }
+
+  delay(16000);
+  
 }
